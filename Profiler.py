@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu May 13 21:13:04 2021
+#author: Logan Dickon
+#Profiler to test and time future projects
 
-@author: 123
-"""
 import cProfile, pstats, io
+
 def Profile(fnc):
     ###A decorator that uses cProfile to profile a function###
     def inner(*args, **kwargs):
