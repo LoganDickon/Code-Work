@@ -1,5 +1,5 @@
-Code for work
+# Code for work
 
-#Omnicheck
+// Omnicheck
 
-#Profiler
+// Profiler
