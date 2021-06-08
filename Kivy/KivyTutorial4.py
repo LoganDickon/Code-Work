@@ -27,10 +27,8 @@ class MyGridLayout(GridLayout):
         def sub_grid():
 
             ### Create Sub-Grid ###
-            self.top_grid = GridLayout(row_force_default=True,
-                                       row_default_height=40,
-                                       col_force_default=True,
-                                       col_default_width=100)
+            self.top_grid = GridLayout(row_force_default=True, row_default_height=40, 
+                                       col_force_default=True, col_default_width=100)
             ### Number of Columns in sub-grid ###
             self.top_grid.cols = 2
 
