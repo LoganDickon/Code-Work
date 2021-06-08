@@ -12,10 +12,8 @@ class VideoCaptureWrapper(object):
 def Gauge_Picture():
     with VideoCaptureWrapper(1, CAP_DSHOW) as Gauge_camera:
         _, G_Img = Gauge_camera.Cam.read()
-    G_Array = zeros(G_Img.shape, dtype=uint8) #Create an array template
-    G_Array = G_Img.copy() #Fill array template with gauge camera rgb values
-    print(G_Array)
-    return G_Array
+    print(G_Img)
+    return G_Img
 
 if __name__ == "__main__":
     Gauge_Picture()
