@@ -1,0 +1,196 @@
+######################
+### Window Manager ###
+######################
+
+#: import NoTransition kivy.uix.screenmanager.NoTransition
+WindowManager: 
+	
+	transition: NoTransition()
+	
+	Log_in:
+		name: "first"
+	
+	Sign_up:
+		name: "second"
+
+##################
+### LOGIN PAGE ###
+##################
+
+<Log_in>
+	
+	MDFloatLayout:
+		md_bg_color: [10/255, 83/255, 140/255, 1]
+		size: root.width, root.height
+
+		MDIconButton:
+			icon: "close"
+			on_release: app.show_alert_dialog()
+			pos_hint: {"right": 1, "top": 1}
+			theme_text_color: "Custom"
+			text_color: [0/255, 0/255, 0/255, 1]
+
+	MDCard:
+		md_bg_color: [1, 1, 1, 1]
+		size_hint: None, None
+		size: 420, 500
+		pos_hint: {"center_x": .5, "center_y": .5}
+		elevation: 15
+		padding: 20
+		spacing: 30
+		orientation: 'vertical'
+		
+		FitImage:
+			size_hint: None, None
+			height: "100dp"
+			width: "370dp"
+			source: "C:/kivygui/images/Atorlogo.jpg"
+
+		MDLabel:
+			text: 'Sign in'
+			font_size: 30
+			theme_text_color: "Custom"
+			text_color: [125/255, 125/255, 125/255, 1]
+			halign: "center"
+			size_hint_y: None
+			height: 20
+
+		MDTextFieldRound:
+			id: account
+			hint_text: 'Enter Username'
+			icon_right: 'account'
+			size_hint_x: None
+			width: 220
+			font_size: 20
+			pos_hint: {"center_x":.5}
+			color_active: [155/255, 155/255, 155/255, 1]
+			normal_color: [155/255, 155/255, 155/255, 1]
+
+		MDTextFieldRound:
+			id: password
+			hint_text: 'Enter Password'
+			icon_right: 'key-variant'
+			size_hint_x: None
+			width: 220
+			font_size: 20
+			pos_hint: {"center_x":.5}
+			color_active: [155/255, 155/255, 155/255, 1]
+			normal_color: [155/255, 155/255, 155/255, 1]
+			password: True
+
+		MDFloatLayout:
+
+			MDFillRoundFlatIconButton:
+				icon: 'account-multiple-plus'
+				text: "CREATE"
+				font_size: 14
+				#size_hint: .1, .4
+				pos_hint: {"center_x":.32, "center_y":.7}
+				md_bg_color: [10/255, 83/255, 140/255, 1]
+				on_release: app.root.current = "second"
+
+			MDFillRoundFlatIconButton:
+				icon: 'login-variant'
+				text: "LOG IN"
+				font_size: 15
+				size_hint: .3, .36
+				pos_hint: {"center_x":.67, "center_y":.7}
+				md_bg_color: [10/255, 83/255, 140/255, 1]
+				on_release: root.login()
+
+		Widget:
+			size_hint_y: None
+			height: 15
+			color_active: [1, 1, 1, 1]
+
+####################
+### Sign_up Page ###
+####################
+
+<Sign_up>
+	
+	MDFloatLayout:
+		md_bg_color: [60/255, 60/255, 60/255, 1]
+		size: root.width, root.height
+
+		MDIconButton:
+			icon: "close"
+			on_release: app.show_alert_dialog()
+			pos_hint: {"right": 1, "top": 1}
+			theme_text_color: "Custom"
+			text_color: [0/255, 0/255, 0/255, 1]
+
+	MDCard:
+		md_bg_color: [1, 1, 1, 1]
+		size_hint: None, None
+		size: 520, 600
+		pos_hint: {"center_x": .5, "center_y": .5}
+		elevation: 15
+		padding: 20
+		spacing: 30
+		orientation: 'vertical'
+		
+		FitImage:
+			size_hint: None, None
+			height: "150dp"
+			width: "450dp"
+			source: "C:/kivygui/images/Atorlogo.jpg"
+			halign: "center"
+
+		Widget:
+			size_hint_y: None
+			height: -20
+			color_active: [1, 1, 1, 1]
+
+		MDLabel:
+			text: 'Create New Login'
+			font_size: 30
+			theme_text_color: "Custom"
+			text_color: [125/255, 125/255, 125/255, 1]
+			halign: "center"
+			size_hint_y: None
+			height: 50
+
+		MDTextFieldRound:
+			id: account
+			hint_text: 'New Username'
+			icon_right: 'account-plus'
+			size_hint_x: None
+			width: 220
+			font_size: 20
+			pos_hint: {"center_x":.5}
+			color_active: [155/255, 155/255, 155/255, 1]
+			normal_color: [155/255, 155/255, 155/255, 1]
+
+		MDTextFieldRound:
+			id: password
+			hint_text: 'New Password'
+			icon_right: 'key-variant'
+			size_hint_x: None
+			width: 220
+			font_size: 20
+			pos_hint: {"center_x":.5}
+			color_active: [155/255, 155/255, 155/255, 1]
+			normal_color: [155/255, 155/255, 155/255, 1]
+			password: False
+
+		MDFloatLayout:
+
+			MDFillRoundFlatButton:
+				text: "CANCEL"
+				font_size: 15
+				pos_hint: {"center_x":.38, "center_y":.5}
+				md_bg_color: [10/255, 83/255, 140/255, 1]
+				on_release: app.root.current = "first"
+			
+			MDFillRoundFlatButton:
+				text: "SUBMIT"
+				font_size: 15
+				pos_hint: {"center_x":.62, "center_y":.5}
+				md_bg_color: [10/255, 83/255, 140/255, 1]
+				on_release: app.root.current = "second"
+
+		Widget:
+			size_hint_y: None
+			height: 80
+			color_active: [1, 1, 1, 1]
