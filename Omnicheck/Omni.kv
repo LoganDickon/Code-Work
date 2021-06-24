@@ -1,0 +1,188 @@
+######################
+### Window Manager ###
+######################
+
+#: import NoTransition kivy.uix.screenmanager.NoTransition
+WindowManager: 
+	
+	transition: NoTransition()
+	
+	Log_in:
+		name: "first"
+	
+	Sign_up:
+		name: "second"
+
+##################
+### Exit Alert ###
+##################
+
+<ExitDialog>
+	
+	name: "alert"
+	text: "WARNING! You will lose all unsaved progress!"
+	title: "Close Program?"
+	buttons=[
+		MDFlatButton(text="CANCEL", text_color=self.theme_cls.primary_color),
+		MDFlatButton(text="DISCARD", text_color=self.theme_cls.primary_color),]
+
+	MDRectangleFlatButton:
+		pos_hint: {"center_x":.5, "center_y":.5}
+		text: "CANCEL"
+		text_color: self.theme_cls.primary_color
+		on_release: root.close_dialog
+						
+	MDRectangleFlatButton:
+		pos_hint: {"center_x":.5, "center_y":.5}
+		text: "EXIT"
+		text_color: self.theme_cls.primary_color
+		on_release: exit()
+
+##################
+### LOGIN PAGE ###
+##################
+
+<Log_in>
+	
+	MDFloatLayout:
+		md_bg_color: [10/255, 83/255, 140/255, 1]
+		size: root.width, root.height
+
+		MDIconButton:
+			icon: "exit-to-app"
+			on_release: app.show_alert_dialog()
+			pos_hint: {"right": 1, "top": 1}
+			theme_text_color: "Custom"
+			text_color: [0/255, 0/255, 0/255, 1]
+
+	MDCard:
+		md_bg_color: [1, 1, 1, 1]
+		size_hint: None, None
+		size: 420, 500
+		pos_hint: {"center_x": .5, "center_y": .5}
+		elevation: 15
+		padding: 20
+		spacing: 30
+		orientation: 'vertical'
+		
+		FitImage:
+			size_hint: None, None
+			height: "100dp"
+			width: "370dp"
+			source: "C:/kivygui/images/Atorlogo.jpg"
+
+		MDLabel:
+			text: 'Sign in'
+			font_size: 30
+			theme_text_color: "Custom"
+			text_color: [125/255, 125/255, 125/255, 1]
+			halign: "center"
+			size_hint_y: None
+			height: 20
+
+		MDTextFieldRound:
+			id: account
+			hint_text: 'username'
+			icon_right: 'account'
+			size_hint_x: None
+			width: 220
+			font_size: 20
+			pos_hint: {"center_x":.5}
+			color_active: [155/255, 155/255, 155/255, 1]
+			normal_color: [155/255, 155/255, 155/255, 1]
+
+		MDTextFieldRound:
+			id: password
+			hint_text: 'password'
+			icon_right: 'key-variant'
+			size_hint_x: None
+			width: 220
+			font_size: 20
+			pos_hint: {"center_x":.5}
+			color_active: [155/255, 155/255, 155/255, 1]
+			normal_color: [155/255, 155/255, 155/255, 1]
+			password: True
+
+		MDFloatLayout:
+
+			MDFillRoundFlatButton:
+				text: "CREATE"
+				font_size: 15
+				pos_hint: {"center_x":.35, "center_y":.7}
+				md_bg_color: [10/255, 83/255, 140/255, 1]
+				on_release: app.root.current = "second"
+
+			MDFillRoundFlatButton:
+				text: "LOG IN"
+				font_size: 15
+				pos_hint: {"center_x":.65, "center_y":.7}
+				md_bg_color: [10/255, 83/255, 140/255, 1]
+				on_release: root.login()
+
+		Widget:
+			size_hint_y: None
+			height: 15
+			color_active: [1, 1, 1, 1]
+
+####################
+### Sign_up PAGE ###
+####################
+
+<Sign_up>
+	
+	MDFloatLayout:
+		md_bg_color: [10/255, 83/255, 140/255, 1]
+		size: root.width, root.height
+		MDFillRoundFlatButton: 
+			text: "First Page"
+			font_size: 15
+			pos_hint: {"center_x":.35, "center_y":.7}
+			md_bg_color: [10/255, 83/255, 140/255, 1]
+			on_release: app.root.current = "first"
+	
+	MDCard:
+		md_bg_color: [1, 1, 1, 1]
+		size_hint: None, None
+		size: 520, 600
+		pos_hint: {"center_x": .5, "center_y": .5}
+		elevation: 15
+		padding: 20
+		spacing: 30
+		orientation: 'vertical'
+
+		MDLabel:
+			text: 'Create New Account'
+			font_size: 30
+			theme_text_color: "Custom"
+			text_color: [125/255, 125/255, 125/255, 1]
+			halign: "center"
+			size_hint_y: None
+			height: 20
+
+		MDLabel:
+			text: 'Please enter a new Acoount ID'
+			pos_hint: {"center_x":.5}
+			font_size: 20
+
+		MDTextFieldRound:
+			id: account
+			hint_text: 'New Username'
+			icon_right: 'account'
+			size_hint_x: None
+			width: 300
+			font_size: 20
+			pos_hint: {"center_x":.5}
+			color_active: [155/255, 155/255, 155/255, 1]
+			normal_color: [155/255, 155/255, 155/255, 1]
+
+		MDTextFieldRound:
+			id: password
+			hint_text: 'password'
+			icon_right: 'key-variant'
+			size_hint_x: None
+			width: 220
+			font_size: 20
+			pos_hint: {"center_x":.5}
+			color_active: [155/255, 155/255, 155/255, 1]
+			normal_color: [155/255, 155/255, 155/255, 1]
+			password: True
