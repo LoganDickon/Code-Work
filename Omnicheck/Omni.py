@@ -1,8 +1,8 @@
 
 
 # ---------------#
-# - App Imports --#
-# ----------------#
+# - App Imports  #
+# ---------------#
 
 
 from kivymd.app import MDApp
@@ -16,9 +16,9 @@ from win32api import GetSystemMetrics
 import sqlite3
 
 
-# ------------------------#
-# - ScreenManager class --#
-# ------------------------#
+# ----------------------#
+# - ScreenManager class #
+# ----------------------#
 
 
 class WindowManager(ScreenManager):
@@ -42,16 +42,16 @@ class Log_in(Screen):
         
         db = sqlite3.connect('example.db')
         db.execute('CREATE TABLE IF NOT EXISTS login(username TEXT, password TEXT)')
-        db.execute("INSERT INTO login(username, password) VALUES('admin', 'admin')")
+        #db.execute("INSERT INTO login(username, password) VALUES('admin', 'admin')")
         cursor = db.cursor()
         cursor.execute("SELECT * FROM login WHERE username = ? AND password = ?", (user, password))
         row = cursor.fetchone()
         
         if row:
             print('signed in')
-            self.manager.current = 'third'
             self.ids.accountid.text = ""
             self.ids.passwordid.text = ""
+            self.manager.current = 'third'
         else:
             print('Nope!')
             if not self.login_dialog:
@@ -70,7 +70,7 @@ class Log_in(Screen):
 
 
 # ---------------------- # ----------- #
-# - signup screen class --- 2nd Screen #
+# - Signup screen class --- 2nd Screen #
 # ---------------------- # ----------- #
 
 
@@ -87,9 +87,9 @@ class Home(Screen):
     pass
 
 
-# -------------------#
-# - Main app class --#
-# -------------------#
+# -----------------#
+# - Main app class #
+# -----------------#
 
 
 class BuildApp(MDApp):
