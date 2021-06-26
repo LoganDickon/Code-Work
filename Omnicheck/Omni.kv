@@ -29,6 +29,15 @@ WindowManager:
 			theme_text_color: "Custom"
 			text_color: [0/255, 0/255, 0/255, 1]
 
+		MDFillRoundFlatButton:
+			text: "SIGN OUT"
+			font_size: 15
+			pos_hint: {"right":.96, "top":.994}
+			md_bg_color: [100/255, 100/255, 100/255, 1]
+			theme_text_color: "Custom"
+			text_color: 1/255, 1/255, 1/255, 1
+			on_release: app.root.current = "third"
+
 	MDCard:
 		md_bg_color: [1, 1, 1, 1]
 		size_hint: None, None
@@ -81,7 +90,7 @@ WindowManager:
 			MDFillRoundFlatIconButton:
 				icon: 'account-multiple-plus'
 				text: "CREATE"
-				font_size: 14
+				font_size: 15
 				#size_hint: .1, .4
 				pos_hint: {"center_x":.32, "center_y":.7}
 				md_bg_color: [10/255, 83/255, 140/255, 1]
@@ -224,12 +233,66 @@ WindowManager:
 <Home>
 	
 	MDFloatLayout:
-		md_bg_color: [10/255, 83/255, 140/255, 1]
+		md_bg_color: [100/255, 100/255, 100/255, 1]
 		size: root.width, root.height
 
+		MDIconButton:
+			icon: "close"
+			on_release: app.exit_dialog()
+			pos_hint: {"right": 1, "top": 1}
+			theme_text_color: "Custom"
+			text_color: [0/255, 0/255, 0/255, 1]
+
 		MDFillRoundFlatButton:
-			text: "CANCEL"
+			text: "SIGN OUT"
 			font_size: 15
-			pos_hint: {"center_x":.38, "center_y":.5}
-			md_bg_color: [10/255, 83/255, 140/255, 1]
+			pos_hint: {"right":.96, "top":.994}
+			md_bg_color: [100/255, 100/255, 100/255, 1]
+			theme_text_color: "Custom"
+			text_color: 1/255, 1/255, 1/255, 1
 			on_release: app.root.current = "first"
+	
+	MDCard:
+		size_hint: None, None
+		size: (root.width - 100), (root.height - 100)
+		pos_hint: {"center_x":.5, "center_y":.5}
+		elevation: 15
+		padding: 20
+		spacing: 30
+		orientation: 'vertical'
+
+		MDLabel:
+			text: 'Choose Device Type'
+			font_size: 30
+			theme_text_color: "Custom"
+			text_color: [125/255, 125/255, 125/255, 1]
+			halign: "center"
+			size_hint_y: None
+
+		MDGridLayout:
+			cols: 2
+			rows: 2
+			spacing: 15
+			MDCard:
+				size: 50, 50
+				md_bg_color: [100/255, 100/255, 100/255, 1]
+				elevation: 15
+				
+				Image:
+					allow_stretch: True
+					keep_raio: False
+					source: "C:/kivygui/images/SCBA.jpg"
+					pos_hint: {"center_x":.5, "center_y":.5}
+
+			MDCard:
+				size: 50, 50
+				md_bg_color: [100/255, 100/255, 100/255, 1]
+				elevation: 15
+			MDCard:
+				size: 50, 50
+				md_bg_color: [100/255, 100/255, 100/255, 1]
+				elevation: 15
+			MDCard:
+				size: 50, 50
+				md_bg_color: [100/255, 100/255, 100/255, 1]
+				elevation: 15
