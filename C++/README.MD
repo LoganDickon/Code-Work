@@ -1,1 +1,0 @@
-Craigs Display Libraries
