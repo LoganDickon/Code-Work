@@ -1,7 +1,5 @@
-# Code for work
+# PROGRAMS FOR PROJECTS AT WORK
 
+// FilterCheck
 // Omnicheck
-
-// Kivy & KivyMD
-
 // Profiler
