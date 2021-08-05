@@ -6,12 +6,12 @@ differnetial pressure PSI at the mask */
 #include <Wire.h> // Wire library
 #include <sdpsensor.h> // SDP sensor library
 #include <MS5525DSO.h> // MS5525DSO library
-#include <font_Arial.h> // ILI9341 Font Library
-#include <font_ArialBlack.h>
-#include "Atorlogo2.c"
-#include <ZzzMovingAvg.h>
+#include <font_Arial.h> // ILI9341  Arial Font Library
+#include <font_ArialBlack.h> // ILI9341  Arial Bold Font Library
+#include "Atorlogo2.c" // AtorLABS Splash Image
+#include <ZzzMovingAvg.h> // Sensor Smoothing Library
 
-// ILI9341 Display Pin Definitions
+// ILI9341 HMI Pin Definitions
 #define BACKLIGHT_PIN   3 
 #define TFT_DC          20
 #define TFT_CS          21
@@ -19,22 +19,24 @@ differnetial pressure PSI at the mask */
 #define TFT_MOSI        7
 #define TFT_SCLK        14
 #define TFT_MISO        12
-#define ATOR (11, 84, 139)
+// ASCII RGB Definitions
+#define AtorBlue (11, 84, 139)
 
 // Library Constructors
 ILI9341_t3 HMI = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO); // Call ILI9341's constructor
 SDP8XXSensor flowSensor; // Call SDP sensor's constructor
 MS5525DSO diffSensor(pp001DS); // Call MS5525DSO sensor's constructor
-ZzzMovingAvg <10, float, float> avg;
+ZzzMovingAvg <10, float, float> avg; // Sensor Smoothing Constructor
 
 // Initialize Variables
 double flowPressure; // SDP Pressure
+double result; // flowPressure Smoothed 
 double diffPressure; // MS5525DSO Pressure
+double paToflow; // flowPressure converted to flow
+double mmH20; // diffPressure converted to mmH20
 double fanSpeed = 90; // PWM Fan Speed
-double result;
 int ret; // Returned value of SDP Pressure Validation Sequence
 int Switch; // Switch ON/OFF
-int cycle = 0;
 
 // Main Setup
 void setup() // put your setup code here, to run once:
@@ -73,26 +75,28 @@ void loop() // put your main code here, to run repeatedly:
     Serial.printf("Value added: %lf | Average = ", flowPressure);
     Serial.println(avg.add(flowPressure));
     result = avg.get();
+    // paToflow = (-0.00004 * result ** 2
     HMI.setCursor(60, 60);
+    HMI.setFont(Arial_16);
     HMI.fillRect(20, 50, 210, 45, ILI9341_WHITE);
     HMI.setTextColor(ILI9341_BLACK);
-    HMI.print(result, 2);
-    HMI.print(" Pa");
+    HMI.print(paToflow, 2);
+    HMI.print(" LPM");
     
     // Differential Pressure
     diffSensor.readPressureAndTemperature(&diffPressure);
-    HMI.setCursor(60, 160);
+    HMI.setCursor(35, 160);
     HMI.fillRect(20, 150, 210, 45, ILI9341_WHITE);
+    HMI.setFont(Arial_16);
     HMI.setTextColor(ILI9341_BLACK);
-    HMI.print(diffPressure, 2);
-    HMI.print(" PSI");
+    mmH20 = diffPressure * 703.08893732448;
+    HMI.print(mmH20, 2);
+    HMI.print(" mmH2O");
     
     delay(500);
 
-    cycle += 1;
-
     // Start Up Fan Speed Adjustment
-    if (result < 41.5 && Switch == LOW && fanSpeed < 255) {
+    if (result < 41.5 && Switch == LOW && fanSpeed <= 255) {
         fanSpeed += 1;
         analogWrite(2, fanSpeed);
         Serial.println(fanSpeed);
@@ -103,17 +107,8 @@ void loop() // put your main code here, to run repeatedly:
       Serial.println(fanSpeed);
       delay(200);
     }
-    if (cycle == 4) {
-      cycle = 0;
-    }
-    // Post Filter Insertion Fan Speed Adjustment
-    if (result < 41.5 && Switch == HIGH && fanSpeed < 255) {
-      fanSpeed += 3;
-      analogWrite(2, fanSpeed);
-      Serial.println(fanSpeed);}
-    
     // Post Filter Removal Fan Speed Re-Adjustment
-    if (result > 75 && Switch == LOW) {
+    if (flowPressure > 70 && Switch == LOW) {
       fanSpeed = 90;
       analogWrite(2, fanSpeed);
       if (result < 41.5 && fanSpeed < 255) {
@@ -132,19 +127,19 @@ void loop() // put your main code here, to run repeatedly:
 void Ator_Splash_Screen() // HMI Splash Screen Function
 {
   // Create Splash Screen
-  HMI.setRotation(2);
+  HMI.setRotation(4);
   HMI.fillScreen(ILI9341_WHITE);
-  HMI.writeRect(15, 90, AtorDrag.width, AtorDrag.height, (uint16_t*)(AtorDrag.pixel_data));
-  HMI.drawRect(5, 5, 230, 310, ATOR);
-  HMI.drawRect(6, 6, 227, 307, ATOR);
-  HMI.drawRect(7, 7, 225, 305, ATOR);
-  HMI.drawRect(8, 8, 226, 306, ATOR);
+  HMI.writeRect(15, 75, AtorDrag.width, AtorDrag.height, (uint16_t*)(AtorDrag.pixel_data));
+  HMI.drawRect(5, 5, 230, 310, AtorBlue);
+  HMI.drawRect(6, 6, 227, 307, AtorBlue);
+  HMI.drawRect(7, 7, 225, 305, AtorBlue);
+  HMI.drawRect(8, 8, 226, 306, AtorBlue);
   HMI.setCursor(15, 160);
-  HMI.setTextColor(ATOR);
+  HMI.setTextColor(AtorBlue);
   HMI.setTextSize(2);
   HMI.setFont(ArialBlack_18);
   HMI.print("FILTER CHECK");
-  delay(20000); // 5 Second Delay
+  delay(5000); // 5 Second Delay
 } // End of Ator_Splash_Screen()
 
 // HMI Second Screen
@@ -152,10 +147,11 @@ void Second_Screen()
 {
   // Create Second Screen
   HMI.fillRect(1, 1, 240, 320, ILI9341_WHITE);
-  HMI.drawRect(5, 5, 230, 310, ATOR);
-  HMI.drawRect(6, 6, 227, 307, ATOR);
-  HMI.drawRect(7, 7, 225, 305, ATOR);
-  HMI.drawRect(8, 8, 226, 306, ATOR);
+  HMI.drawRect(5, 5, 230, 310, AtorBlue);
+  HMI.drawRect(6, 6, 227, 307, AtorBlue);
+  HMI.drawRect(7, 7, 225, 305, AtorBlue);
+  HMI.drawRect(8, 8, 226, 306, AtorBlue);
+  HMI.setFont(ArialBlack_24);
   HMI.setCursor(60, 20);
   HMI.setTextColor(ILI9341_BLACK);
   HMI.setFont(Arial_24);
