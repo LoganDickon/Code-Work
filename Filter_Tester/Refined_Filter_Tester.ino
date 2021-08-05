@@ -26,7 +26,7 @@ differnetial pressure PSI at the mask */
 ILI9341_t3 HMI = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO); // Call ILI9341's constructor
 SDP8XXSensor flowSensor; // Call SDP sensor's constructor
 MS5525DSO diffSensor(pp001DS); // Call MS5525DSO sensor's constructor
-ZzzMovingAvg <10, float, float> avg; // Sensor Smoothing Constructor
+ZzzMovingAvg <11, float, float> avg; // Sensor Smoothing Constructor
 
 // Initialize Variables
 double flowPressure; // SDP Pressure
@@ -34,7 +34,7 @@ double result; // flowPressure Smoothed
 double diffPressure; // MS5525DSO Pressure
 double paToflow; // flowPressure converted to flow
 double mmH20; // diffPressure converted to mmH20
-double fanSpeed = 90; // PWM Fan Speed
+double fanSpeed = 100; // PWM Fan Speed
 int ret; // Returned value of SDP Pressure Validation Sequence
 int Switch; // Switch ON/OFF
 
@@ -75,10 +75,10 @@ void loop() // put your main code here, to run repeatedly:
     Serial.printf("Value added: %lf | Average = ", flowPressure);
     Serial.println(avg.add(flowPressure));
     result = avg.get();
-    // paToflow = (-0.00004 * result ** 2
+    paToflow = ((((-0.00004 * (result * result)) + (.0329 * result) + 1.6349)) * 28.316846999);
     HMI.setCursor(60, 60);
     HMI.setFont(Arial_16);
-    HMI.fillRect(20, 50, 210, 45, ILI9341_WHITE);
+    HMI.fillRect(40, 50, 140, 40, ILI9341_WHITE);
     HMI.setTextColor(ILI9341_BLACK);
     HMI.print(paToflow, 2);
     HMI.print(" LPM");
@@ -96,20 +96,41 @@ void loop() // put your main code here, to run repeatedly:
     delay(500);
 
     // Start Up Fan Speed Adjustment
-    if (result < 41.5 && Switch == LOW && fanSpeed <= 255) {
-        fanSpeed += 1;
-        analogWrite(2, fanSpeed);
-        Serial.println(fanSpeed);
-        }
-    if (result > 46) {
-      fanSpeed -= 1;
+    if (paToflow <= 83 && Switch == LOW && fanSpeed < 255) {
+      fanSpeed += 0;
+      analogWrite(2, fanSpeed);
+      Serial.println(fanSpeed);
+      delay(500);
+      }
+    if (paToflow >= 87 && Switch == LOW) {
+      fanSpeed -= 0;
       analogWrite(2, fanSpeed);
       Serial.println(fanSpeed);
       delay(200);
     }
+    if (paToflow <= 83.6 && Switch == HIGH && fanSpeed < 255) {
+      fanSpeed += 1;
+      analogWrite(2, fanSpeed);
+      Serial.println(fanSpeed);
+      delay(500);
+    }
+    if (paToflow >= 86.4 && Switch == HIGH) {
+      fanSpeed -= 1;
+      analogWrite(2, fanSpeed);
+      Serial.println(fanSpeed);
+      delay(500);
+    }
+    if (paToflow >= 83 && paToflow <= 87) {
+      HMI.drawRect(30, 47, 160, 44, ILI9341_GREEN);
+      HMI.drawRect(31, 48, 160, 44, ILI9341_GREEN);
+    }
+    if (paToflow < 83 || paToflow > 87) {
+      HMI.drawRect(30, 47, 160, 44, ILI9341_RED);
+      HMI.drawRect(31, 48, 160, 44, ILI9341_RED);
+    }
     // Post Filter Removal Fan Speed Re-Adjustment
     if (flowPressure > 70 && Switch == LOW) {
-      fanSpeed = 90;
+      fanSpeed = 100;
       analogWrite(2, fanSpeed);
       if (result < 41.5 && fanSpeed < 255) {
         fanSpeed += 1;
@@ -127,7 +148,7 @@ void loop() // put your main code here, to run repeatedly:
 void Ator_Splash_Screen() // HMI Splash Screen Function
 {
   // Create Splash Screen
-  HMI.setRotation(4);
+  HMI.setRotation(2);
   HMI.fillScreen(ILI9341_WHITE);
   HMI.writeRect(15, 75, AtorDrag.width, AtorDrag.height, (uint16_t*)(AtorDrag.pixel_data));
   HMI.drawRect(5, 5, 230, 310, AtorBlue);
@@ -166,7 +187,7 @@ void Second_Screen()
 void Sensor_Val() // Sensor Start Up Validation Function
 {
   while (ret != 0 || !diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) { // Otherwise Throw Error Code
-    HMI.setRotation(4);
+    HMI.setRotation(2);
     HMI.fillScreen(ILI9341_RED);
     HMI.setCursor(60, 65);
     HMI.setTextColor(ILI9341_BLACK);
