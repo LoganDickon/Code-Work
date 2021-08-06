@@ -1,2 +1,2 @@
 # cm1106_i2c
-CUBIC CM1106 I2C library
+CUBIC CM1106 & CM1107 I2C library
