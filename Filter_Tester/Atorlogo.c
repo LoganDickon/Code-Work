@@ -1,4 +1,4 @@
-/* GIMP RGB C-Source image dump (Atorlogo2.c) */
+/* GIMP RGB C-Source image dump (Atorlogo.c) */
 
 static const struct {
   unsigned int 	 width;
