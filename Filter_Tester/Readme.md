@@ -1,3 +1,3 @@
 Filter Tester Project!
 
-Intellectual Property of AtorLABS
+Intellectual Property of AtorLabs
