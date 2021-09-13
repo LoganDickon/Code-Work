@@ -6,119 +6,145 @@ differnetial pressure PSI at the mask */
 
 // Filter Tester Libraries
   #include <Wire.h>                   // Wire library
-  #include <sdpsensor.h>              // SDP810 sensor library
+  #include <sdpsensor.h>              // SDP sensor library
   #include <MS5525DSO.h>              // MS5525DSO library
   #include <font_Arial.h>             // ILI9341  Arial Font Library
   #include <font_ArialBlack.h>        // ILI9341  Arial Bold Font Library
   #include "Atorlogo.c"               // AtorLABS Splash Image
   #include <ZzzMovingAvg.h>           // Sensor Smoothing Library
-  #include <StopwatchLib.h>           // Stopwatch Library
+  #include <StopwatchLib.h>           // Stopwatch Library // COMMENT OUT FOR FINAL USE!
 
 // Constant Definitions
   // ILI9341 HMI Pin Definitions
-  #define BACKLIGHT_PIN   3           // Digital Pin 3 (Teensy 3.5)
-  #define TFT_MOSI        7           // Digital Pin 7 (Teensy 3.5)
-  #define TFT_MISO        12          // Digital Pin 12 (Teensy 3.5)
-  #define TFT_SCLK        14          // Digital Pin 14 (Teensy 3.5)
-  #define TFT_DC          20          // Digital Pin 20 (Teensy 3.5)
-  #define TFT_CS          21          // Digital Pin 21 (Teensy 3.5)
-  #define TFT_RST         255         // 3.3v (Teensy 3.5)
+    #define BACKLIGHT_PIN   1
+    #define TFT_DC          20
+    #define TFT_CS          21
+    #define TFT_RST         255
+    #define TFT_MOSI        7
+    #define TFT_SCLK        14
+    #define TFT_MISO        12
   
   // ASCii RGB Definitions
-  #define AtorBlue (11, 84, 139)
+    #define AtorBlue (11, 84, 139)
 
 // Library Constructors
   ILI9341_t3 HMI = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);       // Call ILI9341's constructor
   SDP8XXSensor flowSensor;                                                                  // Call SDP sensor's constructor
   MS5525DSO diffSensor(pp001DS);                                                            // Call MS5525DSO sensor's constructor
-  ZzzMovingAvg <5, float, float> avg;                                                       // Sensor Smoothing Constructor
-  Stopwatch stopwatch;                                                                      // Serial Stopwatch Constructor
+  ZzzMovingAvg <5, float, float> avg;                                                       // SDP Sensor Smoothing Constructor
+  ZzzMovingAvg <5, float, float> avg2;                                                      // MS5525DSO Sensor Smoothing Constructor
+  Stopwatch stopwatch;                                                                      // Serial Stopwatch Constructor // COMMENT OUT FOR FINAL USE!
 
 // Initialize Variables
   // Double
-  double flowPressure;          // SDP Pressure
-  double AvgFlow;               // flowPressure Smoothed 
-  double diffPressure;          // MS5525DSO Pressure
-  double LPM;                   // flowPressure converted to flow
-  double mmH2O;                 // diffPressure converted to mmH2O
-  double fanSpeed = 110;        // PWM Fan Speed
-  double timer;                 // Holds Stopwatch Value
+    double flowPressure;          // SDP Pressure
+    double AvgFlow;               // flowPressure Smoothed
+    double AvgPressure;           // startPressure Smoothed
+    double diffPressure;          // MS5525DSO Pressure
+    double LPM;                   // flowPressure converted to flow
+    double mmH2O;                 // diffPressure converted to mmH2O
+    double mmH2O_2;               // diffPressure zeroed out
+    double mmH2O_3;               // diffPressure for reset
+    double fanSpeed = 100;        // PWM Fan Speed
+    double timer;                 // Holds Stopwatch Value // COMMENT OUT FOR FINAL USE!
   // Integer
-  int SDPVal;                   // Returned value of SDP Pressure Validation Sequence
-  int Switch;                   // Switch ON/OFF
-  int TestCycles = 0;           // Number of Successful Tests In A Row
+    int SDPVal;                   // Returned value of SDP Pressure Validation Sequence
+    int TestCycles = 0;           // Number of Successful Tests In A Row
+    int i;                        // StartCheck Loop Iteration
   // Boolean
-  bool StartTimer = true;       // Control Timer
+    bool StartTimer = true;       // Control Timer // COMMENT OUT FOR FINAL USE!
 
 // Main Setup BEGIN
   void setup() // put your setup code here, to run once:
   {
     // Device Setups
-      HMI.begin();                            // Begin SPI Comm Link With ILI9341 Display
-      Wire.begin();                           // Begin i2c Comm Link
-      Serial.begin(115300);                   // Begin Serial Comm Link
+      HMI.begin();                                                    // Begin SPI Comm Link With ILI9341 Display
+      Wire.begin();                                                   // Begin i2c Comm Link
+      Serial.begin(115200);                                           // Begin Serial Comm Link // COMMENT OUT FOR FINAL USE!
   
     // Pin Setups
-      pinMode(2, OUTPUT);                     // PWM FAN CONTROL
-      pinMode(4, OUTPUT);                     // FILTER INSERTION SWITCH
-      pinMode(BACKLIGHT_PIN, OUTPUT);         // ILI9341 BACKLIGHT CONTROL
+      pinMode(2, OUTPUT);                                             // PWM FAN CONTROL
+      pinMode(BACKLIGHT_PIN, OUTPUT);                                 // ILI9341 BACKLIGHT CONTROL
     
     // Adjust HMI backlight
-      analogWrite(BACKLIGHT_PIN, 255);        // Set Backlight Brightness
-      analogWrite(2, fanSpeed);               // Set Initial Fan Speed
-      SDPVal = flowSensor.init();             // Initialize SDP Sensor
-      delay(1000);                            // 1 Sec Delay To Allow All Initializations To Complete And Stabilize
-    
+      analogWrite(BACKLIGHT_PIN, 255);                                // Set Backlight Brightness
+      analogWrite(2, fanSpeed);                                       // Set Initial Fan Speed
+      SDPVal = flowSensor.init();                                     // Initialize SDP Sensor
+      delay(1000);                                                    // 1 Sec Delay To Allow All Initializations To Complete And Stabilize
+
     // Program Methods
-      Sensor_Val();                           // Check if sensors started up
-      Ator_Splash_Screen();                   // HMI Screen Splash Screen
-      Second_Screen();                        // Generate Second HMI Screen
+      Sensor_Val();                                                   // Check if sensors started up
+      Ator_Splash_Screen();                                           // HMI Screen Splash Screen
+      i = 0;                                                          // reset i to 0
+      while (i < 10) {
+        diffSensor.readPressureAndTemperature(&diffPressure);         // Read MS5525DSO Sensors PSI
+        avg2.add(diffPressure);                                       // Add Last Read Pressure To Averager
+        AvgPressure = avg2.get();                                     // Return Last Average
+        mmH2O_2 = abs(AvgPressure * 703.08893732448);                 // Take absolute value of mmH2O_2 & convert from psi to mmH2O
+        delay(200);                                                   // Allow Sensor To Read
+        i++;                                                          // Add 1 to i for loop iteration
+        Serial.println(mmH2O_2);                                      // COMMENT OUT FOR FINAL USE!
+      }
+      Test_Screen();                                                  // Generate Second HMI Screen
   }
 // Main Setup END
 
 // Main Loop BEGIN
   void loop() // put your main code here, to run repeatedly:
   {
-    SDPVal = flowSensor.readSample();                                                                               // Attempt to read from SDP sensor
-    if (SDPVal == 0 && diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) {                                                  // If SDP sensor gives a Pressure readout
+    SDPVal = flowSensor.readSample();                                                                                   // Attempt to read from SDP sensor
+    if (SDPVal == 0 && diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) {                                                      // If SDP sensor gives a Pressure readout
       // Flow Pressure
-        flowPressure = flowSensor.getDifferentialPressure();                                                        // Read SDP Sensors Pa Output
-        AvgFlow = avg.get();                                                                                        // Get Average SDP Sensor Pa Value
-        LPM = ((((-0.00004 * (AvgFlow * AvgFlow)) + (.0329 * AvgFlow) + 1.6349)) * 28.316846999);                   // Calculation For LPM Conversion
-        Serial.printf("Real Pascal = %lf | Average Pascal = ", flowPressure);                                       //
-        Serial.print(avg.add(flowPressure));                                                                        // 
-        Serial.printf(" | Flow = %lf LPM | Fan Speed = %lf Bit | Test # = %d \n", LPM, fanSpeed, TestCycles);       // 
-        HMI.setCursor(65, 90);                                                                                      // HMI Commands
-        HMI.setFont(Arial_16);                                                                                      //
-        HMI.fillRect(65, 90, 160, 23, ILI9341_WHITE);                                                               //
-        HMI.setTextColor(ILI9341_BLACK);                                                                            //
-        HMI.print(LPM, 2);                                                                                          //
-        HMI.print(" LPM");                                                                                          //
+        flowPressure = flowSensor.getDifferentialPressure();                                                            // Read SDP Sensors Pa Output
+        avg.add(flowPressure);                                                                                          // Add flowPressure to smoother
+        AvgFlow = avg.get();                                                                                            // Return Last Calculated Average
+        LPM = ((((-0.00004 * (AvgFlow * AvgFlow)) + (.0329 * AvgFlow) + 1.6349)) * 28.316846999);                       // Calculation For LPM Conversion
+        HMI.setCursor(65, 90);                                                                                          // HMI Commands
+        HMI.setFont(Arial_16);                                                                                          //
+        HMI.fillRect(65, 90, 160, 23, ILI9341_WHITE);                                                                   //
+        HMI.setTextColor(ILI9341_BLACK);                                                                                //
+        HMI.print(LPM, 2);                                                                                              //
+        HMI.print(" LPM");                                                                                              //
       
       // Differential Pressure
-        diffSensor.readPressureAndTemperature(&diffPressure);       // Read MS5525DSO Sensors PSI
-        mmH2O = diffPressure * 703.08893732448 + 33;                // Convert PSI To mmH2O
-        HMI.setCursor(50, 170);                                     // HMI Commands
-        HMI.fillRect(20, 170, 200, 40, ILI9341_WHITE);              //
-        HMI.setFont(Arial_16);                                      //
-        HMI.setTextColor(ILI9341_BLACK);                            //
-        HMI.print(mmH2O, 2);                                        //
-        HMI.print(" mmH2O");                                        //
-  
+        diffSensor.readPressureAndTemperature(&diffPressure);                                                           // Read MS5525DSO Sensors PSI
+        mmH2O = ((diffPressure * 703.08893732448) + mmH2O_2);                                                           // Convert PSI To mmH2O
+        HMI.setCursor(50, 170);                                                                                         // HMI Commands
+        HMI.fillRect(20, 170, 200, 40, ILI9341_WHITE);                                                                  //
+        HMI.setFont(Arial_16);                                                                                          //
+        HMI.setTextColor(ILI9341_BLACK);                                                                                //
+        HMI.print(mmH2O, 2);                                                                                            //
+        HMI.print(" mmH2O");                                                                                            //
+        Serial.printf(" | Flow = %lf LPM | Fan Speed = %lf Bit | Diff Pressure = %lf mmH2O |\n", LPM, fanSpeed, mmH2O); // COMMENT OUT FOR FINAL USE!
+      
       // Main Test Sequence
-        Switch = digitalRead(4);                                                      // Read Switch ON/OFF
-        if (Switch == HIGH && LPM >= 83.6 && LPM <= 86.4) {                           
+        if (mmH2O <= -3) {                                                       
+            if (StartTimer == true) {                                                 // COMMENT OUT FOR FINAL USE!
+              Serial.println("Timer Start!");                                         // COMMENT OUT FOR FINAL USE!
+              stopwatch.Reset();                                                      // COMMENT OUT FOR FINAL USE!
+              StartTimer = false;                                                     // COMMENT OUT FOR FINAL USE!
+          } if (LPM < 83.6 || LPM > 86.4) {                                           
+              HMI.setFont(Arial_16);                                                  // HMI Commands
+              HMI.setCursor(50, 30);                                                  //
+              HMI.setTextColor(ILI9341_BLACK);                                        //
+              HMI.println("TESTING...");                                              //
+              HMI.fillCircle(190, 95, 5, ILI9341_RED);                                //
+              TestCycles = 0;                                                         // Reset TestCycles To 0
+          }
+        }
+        if (mmH2O <= -3 && LPM >= 83.6 && LPM <= 86.4) {
           HMI.fillCircle(190, 95, 5, ILI9341_GREEN);                                  // HMI Commands
           TestCycles += 1;                                                            // Iterate TestCycle By 1 Each Cycle
-          if (TestCycles == 3) {                                                      //
-            stopwatch.Update();                                                       //
-            timer = stopwatch.GetElapsed();                                           //
-            Serial.print(timer/1000000);                                              //
-            Serial.print(" Seconds\n");                                               //
-            StartTimer = true;                                                        //
+          if (TestCycles == 3) {                                                      // COMMENT OUT FOR FINAL USE!
+            stopwatch.Update();                                                       // COMMENT OUT FOR FINAL USE!
+            timer = stopwatch.GetElapsed();                                           // COMMENT OUT FOR FINAL USE!
+            Serial.print(timer/1000000);                                              // COMMENT OUT FOR FINAL USE!
+            Serial.print(" Seconds\n");                                               // COMMENT OUT FOR FINAL USE!
+            StartTimer = true;                                                        // COMMENT OUT FOR FINAL USE!
           }
-          Switch = digitalRead(4);                                                    // Read Switch ON/OFF
-          while (Switch == HIGH && TestCycles == 3) {
+          while (mmH2O <= -3 && TestCycles == 3) {
+              diffSensor.readPressureAndTemperature(&diffPressure);                   // Read MS5525DSO Sensors PSI
+              mmH2O_3 = ((diffPressure * 703.08893732448) + mmH2O_2);                 // Convert PSI To mmH2O
               HMI.fillScreen(ILI9341_WHITE);                                          // HMI Commands
               HMI.drawRect(5, 5, 230, 310, AtorBlue);                                 //
               HMI.drawRect(6, 6, 227, 307, AtorBlue);                                 //
@@ -134,26 +160,17 @@ differnetial pressure PSI at the mask */
               HMI.setTextColor(ILI9341_GREENYELLOW);                                  //
               HMI.print(mmH2O, 2);                                                    //
               HMI.print(" mmH2O");                                                    //
+              Serial.println(mmH2O_3);
+              Serial.println(fanSpeed);
               delay(2000);                                                            // 2 Sec Delay
-              Switch = digitalRead(4);                                                // Read Switch ON/OFF
-              if (Switch == LOW) {
-                fanSpeed = 110;                                                       // Reset Fan Blower To 110 Bit
+              if (mmH2O_3 > -3) {
+                fanSpeed = 100;                                                       // Reset Fan Blower To 110 Bit
                 analogWrite(2, fanSpeed);                                             // Fan Blower Adjustment
-                Second_Screen();                                                      // Second Screen Method Call
-                break;}}
-        } if (Switch == HIGH) {                                                       
-          if (StartTimer == true) {                                                   //
-            Serial.println("Timer Start!");                                           //
-            stopwatch.Reset();                                                        //
-            StartTimer = false;                                                       //
-          } if (LPM < 83.6 || LPM > 86.4) {                                           
-              HMI.setFont(Arial_16);                                                  // HMI Commands
-              HMI.setCursor(50, 30);                                                  //
-              HMI.setTextColor(ILI9341_BLACK);                                        //
-              HMI.println("TESTING...");                                              //
-              HMI.fillCircle(190, 95, 5, ILI9341_RED);                                //
-              TestCycles = 0;}                                                        // Reset TestCycles To 0
-        } if (LPM <= 80 && Switch == LOW) {                                           
+                Test_Screen();                                                        // Second Screen Method Call
+                break;
+              }
+            }
+        } if (LPM <= 80 && mmH2O > -3) {                                           
             HMI.setFont(Arial_16);                                                    // HMI Commands
             HMI.setCursor(50, 30);                                                    //
             HMI.setTextColor(ILI9341_RED);                                            //
@@ -161,31 +178,49 @@ differnetial pressure PSI at the mask */
             HMI.println("NOT READY!");                                                //
             delay(600);                                                               // .6 Sec Delay
             HMI.fillRect(45, 30, 140, 20, ILI9341_WHITE);                             //
-          } if (LPM > 80 && Switch == LOW) {                                          
-              HMI.setFont(Arial_16);                                                  // HMI Commands
-              HMI.setCursor(35, 30);                                                  //
-              HMI.setTextColor(ILI9341_GREEN);                                        //
-              HMI.fillRect(35, 30, 168, 16, ILI9341_WHITE);                           //
-              HMI.println("INSERT FILTER!");                                          //
-              delay(600);                                                             // .6 Sec Delay
-              HMI.fillRect(35, 30, 168, 16, ILI9341_WHITE);                           //
-          } if (LPM <= 80 && Switch == HIGH && fanSpeed < 255) {                      
-              fanSpeed += 1.5;                                                        // Iterate Fan Blower By 1.5
-              analogWrite(2, fanSpeed);                                               // Fan Blower Adjustment
-          } if (LPM > 80 && LPM <= 83 && Switch == HIGH && fanSpeed < 255) {          
-              fanSpeed += 1;                                                          // Iterate Fan Blower By 1
-              analogWrite(2, fanSpeed);                                               // Fan Blower Adjustment
-          } if (LPM >= 86 && Switch == HIGH && fanSpeed > 100) {                      
-              fanSpeed -= 1;                                                          // Iterate Fan Blower By -1
-              analogWrite(2, fanSpeed);                                               // Fan Blower Adjustment
-          } if (Switch == LOW) {
-            fanSpeed = 110;                                                           // Reset Fan Blower To 110 Bit
-            analogWrite(2, fanSpeed);}                                                // Fan Blower Adjustment
-          } else {                                                                    
-              Sensor_Val();                                                           // Sensor_Val Method Call
-              if (SDPVal == 0 && diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) {          // If Both SDP & MS5525DSO Are Initialized
-                Second_Screen();}                                                     // Second_Screen Method Call
-          }
+        } if (LPM > 80 && mmH2O > -3) {                                          
+            HMI.setFont(Arial_16);                                                    // HMI Commands
+            HMI.setCursor(35, 30);                                                    //
+            HMI.setTextColor(ILI9341_GREEN);                                          //
+            HMI.fillRect(35, 30, 168, 16, ILI9341_WHITE);                             //
+            HMI.println("INSERT FILTER!");                                            //
+            delay(600);                                                               // .6 Sec Delay
+            HMI.fillRect(35, 30, 168, 16, ILI9341_WHITE);                             //
+        } if (LPM <= 80 && mmH2O <= -3 && fanSpeed < 255) {                      
+            fanSpeed += 1.5;                                                          // Iterate Fan Blower By 1.5
+            analogWrite(2, fanSpeed);                                                 // Fan Blower Adjustment
+        } if (LPM > 80 && LPM <= 83 && mmH2O <= -3 && fanSpeed < 255) {          
+            fanSpeed += 1;                                                            // Iterate Fan Blower By 1
+            analogWrite(2, fanSpeed);                                                 // Fan Blower Adjustment
+        } if (LPM >= 86 && mmH2O <= -3 && fanSpeed > 100) {                      
+            fanSpeed -= 1;                                                            // Iterate Fan Blower By -1
+            analogWrite(2, fanSpeed);                                                 // Fan Blower Adjustment
+        } if (mmH2O > -3) {
+            fanSpeed = 100;                                                           // Reset Fan Blower To 110 Bit
+            analogWrite(2, fanSpeed);                                                 // Fan Blower Adjustment
+        } while (fanSpeed >= 204 & mmH2O <= -3) {
+            HMI.fillScreen(ILI9341_RED);                                              //
+            HMI.drawRect(5, 5, 230, 310, ILI9341_BLACK);                              //
+            HMI.drawRect(6, 6, 227, 307, ILI9341_BLACK);                              //
+            HMI.drawRect(7, 7, 225, 305, ILI9341_BLACK);                              //
+            HMI.drawRect(8, 8, 226, 306, ILI9341_BLACK);                              //
+            HMI.setCursor(60, 65);                                                    //
+            HMI.setTextColor(ILI9341_BLACK);                                          //
+            HMI.setFont(Arial_24);                                                    //
+            HMI.print("ERROR!");                                                      //
+            HMI.setCursor(20, 150);                                                   //
+            HMI.setFont(Arial_14);                                                    //
+            HMI.print("Remove Clogged Filter");                                       //
+            fanSpeed = 100;                                                           // Reset Fan Blower To 110 Bit
+            analogWrite(2, fanSpeed);                                                 // Fan Blower Adjustment
+            delay(6000);
+            Test_Screen();
+            }
+        } else {                                                                    
+            Sensor_Val();                                                             // Sensor_Val Method Call
+            if (SDPVal == 0 && diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) {
+              Test_Screen();}                                                         // Test_Screen Method Call
+        }
     }
 // Main Loop END
 
@@ -209,8 +244,8 @@ differnetial pressure PSI at the mask */
   }
 // HMI SplashScreen Method END
 
-// HMI SecondScreen Method BEGIN
-  void Second_Screen() 
+// HMI TestScreen Method BEGIN
+  void Test_Screen() 
   {
     // Create Second Screen
       HMI.fillRect(1, 1, 240, 320, ILI9341_WHITE);        // HMI Commands
@@ -220,48 +255,53 @@ differnetial pressure PSI at the mask */
       HMI.drawRect(8, 8, 226, 306, AtorBlue);             //
       HMI.setFont(ArialBlack_24);                         //
       HMI.setCursor(60, 60);                              //
-      HMI.setTextColor(ILI9341_BLACK);                    //
+      HMI.setTextColor(AtorBlue);                         //
       HMI.setFont(Arial_24);                              //
       HMI.print("Air Flow \n");                           //
       HMI.setCursor(15, 140);                             //
-      HMI.setTextColor(ILI9341_BLACK);                    //
+      HMI.setTextColor(AtorBlue);                         //
       HMI.setFont(Arial_24);                              //
       HMI.print("Filter Pressure \n");                    //
   }
-// HMI SecondScreen Method END
+// HMI TestScreen Method END
 
 // Sensor Validation Method BEGIN
   void Sensor_Val()
   {
-    // SDP & MS5525DSO Sensor Start Up Validation
-      while (SDPVal != 0)
-      {                                                    
+    // SDP810 Sensor Start Up Validation
+      while (SDPVal != 0) {
         HMI.setRotation(2);                                                     // HMI Commands
         HMI.fillScreen(ILI9341_RED);                                            //
+        HMI.drawRect(5, 5, 230, 310, ILI9341_BLACK);                            //
+        HMI.drawRect(6, 6, 227, 307, ILI9341_BLACK);                            //
+        HMI.drawRect(7, 7, 225, 305, ILI9341_BLACK);                            //
+        HMI.drawRect(8, 8, 226, 306, ILI9341_BLACK);                            //
         HMI.setCursor(60, 65);                                                  //
         HMI.setTextColor(ILI9341_BLACK);                                        //
         HMI.setFont(Arial_24);                                                  //
-        HMI.print("ERROR!");                                                    //
         HMI.setCursor(10, 150);                                                 //
         HMI.setFont(Arial_14);                                                  //
         HMI.print("Flow Sensor Didn't Start!");                                 //
         analogWrite(2, 0);                                                      // Turn Fan Blower Off
         SDPVal = flowSensor.init();                                             // Attempt To Start SDP Sensor
-        delay(1000);}                                                           // 1 Sec Delay
-      
-      while (!diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) 
-      {
+        delay(1000);                                                            // 1 Sec Delay
+      }
+      // MS5525DSO Sensor Start Up Validation
+      while (!diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) {
         HMI.setRotation(2);                                                     // HMI Commands
         HMI.fillScreen(ILI9341_RED);                                            //
+        HMI.drawRect(5, 5, 230, 310, ILI9341_BLACK);                            //
+        HMI.drawRect(6, 6, 227, 307, ILI9341_BLACK);                            //
+        HMI.drawRect(7, 7, 225, 305, ILI9341_BLACK);                            //
+        HMI.drawRect(8, 8, 226, 306, ILI9341_BLACK);                            //
         HMI.setCursor(60, 65);                                                  //
         HMI.setTextColor(ILI9341_BLACK);                                        //
         HMI.setFont(Arial_24);                                                  //
-        HMI.print("ERROR!");                                                    //
         HMI.setCursor(10, 150);                                                 //
         HMI.setFont(Arial_14);                                                  //
         HMI.print("Filter Sensor Didn't Start!");                               //
         analogWrite(2, 0);                                                      // Turn Fan Blower Off
-        delay(1000);}                                                           // 1 Sec Delay
-        
+        delay(1000);                                                            // 1 Sec Delay
+      }
   }
 // End of Sensor_Val()
