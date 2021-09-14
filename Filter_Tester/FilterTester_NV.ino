@@ -12,7 +12,7 @@ differnetial pressure PSI at the mask */
   #include <font_ArialBlack.h>        // ILI9341  Arial Bold Font Library
   #include "Atorlogo.c"               // AtorLABS Splash Image
   #include <ZzzMovingAvg.h>           // Sensor Smoothing Library
-  #include <StopwatchLib.h>           // Stopwatch Library // COMMENT OUT FOR FINAL USE!
+  #include <StopwatchLib.h>           // Stopwatch Library // 
 
 // Constant Definitions
   // ILI9341 HMI Pin Definitions
@@ -33,7 +33,7 @@ differnetial pressure PSI at the mask */
   MS5525DSO diffSensor(pp001DS);                                                            // Call MS5525DSO sensor's constructor
   ZzzMovingAvg <5, float, float> avg;                                                       // SDP Sensor Smoothing Constructor
   ZzzMovingAvg <5, float, float> avg2;                                                      // MS5525DSO Sensor Smoothing Constructor
-  Stopwatch stopwatch;                                                                      // Serial Stopwatch Constructor // COMMENT OUT FOR FINAL USE!
+  Stopwatch stopwatch;                                                                      // Serial Stopwatch Constructor // 
 
 // Initialize Variables
   // Double
@@ -46,13 +46,14 @@ differnetial pressure PSI at the mask */
     double mmH2O_2;               // diffPressure zeroed out
     double mmH2O_3;               // diffPressure for reset
     double fanSpeed = 100;        // PWM Fan Speed
-    double timer;                 // Holds Stopwatch Value // COMMENT OUT FOR FINAL USE!
+    double timer;                 // Holds Stopwatch Value // 
   // Integer
-    int SDPVal;                   // Returned value of SDP Pressure Validation Sequence
+    int SDPVal;                   // Returned Value of SDP810 Pressure Validation Sequence
+    int MSVal;                    // Returned Value of MS5525DSO Pressure Validation Sequence
     int TestCycles = 0;           // Number of Successful Tests In A Row
     int i;                        // StartCheck Loop Iteration
   // Boolean
-    bool StartTimer = true;       // Control Timer // COMMENT OUT FOR FINAL USE!
+    bool StartTimer = true;       // Control Timer // 
 
 // Main Setup BEGIN
   void setup() // put your setup code here, to run once:
@@ -60,7 +61,7 @@ differnetial pressure PSI at the mask */
     // Device Setups
       HMI.begin();                                                    // Begin SPI Comm Link With ILI9341 Display
       Wire.begin();                                                   // Begin i2c Comm Link
-      Serial.begin(115200);                                           // Begin Serial Comm Link // COMMENT OUT FOR FINAL USE!
+      Serial.begin(115200);                                           // Begin Serial Comm Link // 
   
     // Pin Setups
       pinMode(2, OUTPUT);                                             // PWM FAN CONTROL
@@ -69,21 +70,25 @@ differnetial pressure PSI at the mask */
     // Adjust HMI backlight
       analogWrite(BACKLIGHT_PIN, 255);                                // Set Backlight Brightness
       analogWrite(2, fanSpeed);                                       // Set Initial Fan Speed
-      SDPVal = flowSensor.init();                                     // Initialize SDP Sensor
+      SDPVal = flowSensor.init();                                     // Initialize SDP810 Sensor
+      MSVal = diffSensor.begin(I2C_MS5525DSO_ADDR_ALT);               // Initialize MS5525DSO Sensor
       delay(1000);                                                    // 1 Sec Delay To Allow All Initializations To Complete And Stabilize
 
     // Program Methods
       Sensor_Val();                                                   // Check if sensors started up
       Ator_Splash_Screen();                                           // HMI Screen Splash Screen
       i = 0;                                                          // reset i to 0
-      while (i < 10) {
+      while (i < 12) {
         diffSensor.readPressureAndTemperature(&diffPressure);         // Read MS5525DSO Sensors PSI
-        avg2.add(diffPressure);                                       // Add Last Read Pressure To Averager
+        if (diffPressure >= -.035 && diffPressure <= .035 ) {
+          avg2.add(diffPressure);                                     // Add Last Read Pressure To Smoother
+          i++;                                                        // Add 1 to i
+        }
         AvgPressure = avg2.get();                                     // Return Last Average
         mmH2O_2 = abs(AvgPressure * 703.08893732448);                 // Take absolute value of mmH2O_2 & convert from psi to mmH2O
         delay(200);                                                   // Allow Sensor To Read
-        i++;                                                          // Add 1 to i for loop iteration
-        Serial.println(mmH2O_2);                                      // COMMENT OUT FOR FINAL USE!
+        Serial.printf("i: %d\n", i);
+        Serial.println(diffPressure);                                      // 
       }
       Test_Screen();                                                  // Generate Second HMI Screen
   }
@@ -92,8 +97,9 @@ differnetial pressure PSI at the mask */
 // Main Loop BEGIN
   void loop() // put your main code here, to run repeatedly:
   {
-    SDPVal = flowSensor.readSample();                                                                                   // Attempt to read from SDP sensor
-    if (SDPVal == 0 && diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) {                                                      // If SDP sensor gives a Pressure readout
+    SDPVal = flowSensor.readSample();                                                                                   // Attempt to read from SDP810 sensor
+    //delay(100);
+    if (flowSensor.getDifferentialPressure() && diffSensor.readPressureAndTemperature(&diffPressure)) {                 // If SDP sensor gives a Pressure readout
       // Flow Pressure
         flowPressure = flowSensor.getDifferentialPressure();                                                            // Read SDP Sensors Pa Output
         avg.add(flowPressure);                                                                                          // Add flowPressure to smoother
@@ -115,15 +121,20 @@ differnetial pressure PSI at the mask */
         HMI.setTextColor(ILI9341_BLACK);                                                                                //
         HMI.print(mmH2O, 2);                                                                                            //
         HMI.print(" mmH2O");                                                                                            //
-        Serial.printf(" | Flow = %lf LPM | Fan Speed = %lf Bit | Diff Pressure = %lf mmH2O |\n", LPM, fanSpeed, mmH2O); // COMMENT OUT FOR FINAL USE!
-      
+        Serial.printf(" Flow: %lf LPM | Fan Speed: %lf Bit | Diff Pressure: %lf mmH2O | MS5525DSO: %d | SDP810: %d\n", LPM, fanSpeed, mmH2O, MSVal, SDPVal); // 
+        
       // Main Test Sequence
         if (mmH2O <= -3) {                                                       
-            if (StartTimer == true) {                                                 // COMMENT OUT FOR FINAL USE!
-              Serial.println("Timer Start!");                                         // COMMENT OUT FOR FINAL USE!
-              stopwatch.Reset();                                                      // COMMENT OUT FOR FINAL USE!
-              StartTimer = false;                                                     // COMMENT OUT FOR FINAL USE!
-          } if (LPM < 83.6 || LPM > 86.4) {                                           
+            if (StartTimer == true) {                                                 // 
+              stopwatch.Reset();                                                      // 
+              StartTimer = false;                                                     //
+              diffSensor.readPressureAndTemperature(&diffPressure);                   // Read MS5525DSO Sensors PSI
+              mmH2O = ((diffPressure * 703.08893732448) + mmH2O_2);                   // Convert PSI To mmH2O
+              if (mmH2O >= -3) {
+                StartTimer = true;
+              }
+              Serial.println("Timer Start!");                                         // 
+          } if (LPM < 83.81 || LPM > 86.19) {                                           
               HMI.setFont(Arial_16);                                                  // HMI Commands
               HMI.setCursor(50, 30);                                                  //
               HMI.setTextColor(ILI9341_BLACK);                                        //
@@ -132,17 +143,17 @@ differnetial pressure PSI at the mask */
               TestCycles = 0;                                                         // Reset TestCycles To 0
           }
         }
-        if (mmH2O <= -3 && LPM >= 83.6 && LPM <= 86.4) {
+        if (mmH2O <= -3 && LPM >= 83.81 && LPM <= 86.19) {
           HMI.fillCircle(190, 95, 5, ILI9341_GREEN);                                  // HMI Commands
           TestCycles += 1;                                                            // Iterate TestCycle By 1 Each Cycle
-          if (TestCycles == 3) {                                                      // COMMENT OUT FOR FINAL USE!
-            stopwatch.Update();                                                       // COMMENT OUT FOR FINAL USE!
-            timer = stopwatch.GetElapsed();                                           // COMMENT OUT FOR FINAL USE!
-            Serial.print(timer/1000000);                                              // COMMENT OUT FOR FINAL USE!
-            Serial.print(" Seconds\n");                                               // COMMENT OUT FOR FINAL USE!
-            StartTimer = true;                                                        // COMMENT OUT FOR FINAL USE!
+          if (TestCycles == 5) {                                                      // 
+            stopwatch.Update();                                                       // 
+            timer = stopwatch.GetElapsed();                                           // 
+            Serial.print(timer/1000000);                                              // 
+            Serial.print(" Seconds\n");                                               // 
+            StartTimer = true;                                                        // 
           }
-          while (mmH2O <= -3 && TestCycles == 3) {
+          while (mmH2O <= -3 && TestCycles == 5) {
               diffSensor.readPressureAndTemperature(&diffPressure);                   // Read MS5525DSO Sensors PSI
               mmH2O_3 = ((diffPressure * 703.08893732448) + mmH2O_2);                 // Convert PSI To mmH2O
               HMI.fillScreen(ILI9341_WHITE);                                          // HMI Commands
@@ -189,10 +200,10 @@ differnetial pressure PSI at the mask */
         } if (LPM <= 80 && mmH2O <= -3 && fanSpeed < 255) {                      
             fanSpeed += 1.5;                                                          // Iterate Fan Blower By 1.5
             analogWrite(2, fanSpeed);                                                 // Fan Blower Adjustment
-        } if (LPM > 80 && LPM <= 83 && mmH2O <= -3 && fanSpeed < 255) {          
+        } if (LPM > 80 && LPM <= 83.81 && mmH2O <= -3 && fanSpeed < 255) {          
             fanSpeed += 1;                                                            // Iterate Fan Blower By 1
             analogWrite(2, fanSpeed);                                                 // Fan Blower Adjustment
-        } if (LPM >= 86 && mmH2O <= -3 && fanSpeed > 100) {                      
+        } if (LPM >= 86.19 && mmH2O <= -3) {                      
             fanSpeed -= 1;                                                            // Iterate Fan Blower By -1
             analogWrite(2, fanSpeed);                                                 // Fan Blower Adjustment
         } if (mmH2O > -3) {
@@ -216,9 +227,9 @@ differnetial pressure PSI at the mask */
             delay(6000);
             Test_Screen();
             }
-        } else {                                                                    
+        } else {                                                         
             Sensor_Val();                                                             // Sensor_Val Method Call
-            if (SDPVal == 0 && diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) {
+            if (SDPVal == 0 && MSVal == 1) {
               Test_Screen();}                                                         // Test_Screen Method Call
         }
     }
@@ -269,7 +280,14 @@ differnetial pressure PSI at the mask */
   void Sensor_Val()
   {
     // SDP810 Sensor Start Up Validation
+      Serial.println("ENTERING VALIDATION LOOP");
       while (SDPVal != 0) {
+        delay(100);                                                             // 100 milli Second Delay
+        SDPVal = flowSensor.init();                                             // Attempt To Start SDP Sensor
+        Serial.printf("SDP810: %d\n", SDPVal);
+        if (SDPVal == 0) {
+          break;                                                                // Skip Loop Iteration
+        }
         HMI.setRotation(2);                                                     // HMI Commands
         HMI.fillScreen(ILI9341_RED);                                            //
         HMI.drawRect(5, 5, 230, 310, ILI9341_BLACK);                            //
@@ -283,11 +301,16 @@ differnetial pressure PSI at the mask */
         HMI.setFont(Arial_14);                                                  //
         HMI.print("Flow Sensor Didn't Start!");                                 //
         analogWrite(2, 0);                                                      // Turn Fan Blower Off
-        SDPVal = flowSensor.init();                                             // Attempt To Start SDP Sensor
         delay(1000);                                                            // 1 Sec Delay
       }
       // MS5525DSO Sensor Start Up Validation
-      while (!diffSensor.begin(I2C_MS5525DSO_ADDR_ALT)) {
+      while (MSVal != 1) {
+        delay(100);                                                             // 100 milli Second Delay
+        MSVal = diffSensor.begin(I2C_MS5525DSO_ADDR_ALT);                       // Attempt To Start MS5525DSO Sensor
+        Serial.printf("MS5525DSO: %d\n", MSVal);
+        if (MSVal == 0) {
+          break;                                                                // Skip Loop Iteration
+        }
         HMI.setRotation(2);                                                     // HMI Commands
         HMI.fillScreen(ILI9341_RED);                                            //
         HMI.drawRect(5, 5, 230, 310, ILI9341_BLACK);                            //
