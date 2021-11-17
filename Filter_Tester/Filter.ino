@@ -60,8 +60,10 @@ void setup() {  // put your setup code here, to run once:
     Ator_Splash_Screen();
     
   // Pin(s) Setup
+    pinMode(13, OUTPUT);
     pinMode(PWM, OUTPUT);
     pinMode(BACKLIGHT_PIN, OUTPUT);
+    digitalWrite(13, HIGH);
     analogWrite(PWM, fanSpeed);
     analogWrite(BACKLIGHT_PIN, 255);
 
@@ -69,8 +71,8 @@ void setup() {  // put your setup code here, to run once:
     
   // Start-up Methods
     Sensor_Val();           // Sensor Validation Method
+    Flow_Sensor_Start_Up(); // Stabilization of start-up Flow Method
     Diff_Sensor_Zero();     // Zero out Pressure Sensor Method
-    Flow_Sensor_Start_Up(); // Stabilization of start-up Flow Metho
     Test_Screen();          // HMI Method for Graphics
 }
 
@@ -83,7 +85,7 @@ void loop() {  // put your main code here, to run repeatedly:
     if (flowSensor.getDifferentialPressure() && diffSensor.pressure) {
       // LPM & Flow Pressure
         flowPressure = flowSensor.getDifferentialPressure();
-        LPM = ((((-0.00004 * (flowPressure * flowPressure)) + (.0329 * flowPressure) + 1.6349)) * 28.316846999);
+        LPM = ((((-0.00029 * (flowPressure * flowPressure)) + (1.1069 * flowPressure) + 39.912)));
         HMI.setCursor(65, 90);
         HMI.setFont(Arial_16);
         HMI.fillRect(65, 90, 160, 23, ILI9341_WHITE);
@@ -103,17 +105,17 @@ void loop() {  // put your main code here, to run repeatedly:
         Serial.printf(" Flow: %lf LPM | Fan Speed: %d Bit | Diff Pressure: %lf mmH2O\n", LPM, fanSpeed, mmH2O);
 
       // Filter Test Procedure
-        if (LPM < 84.5) {                                                       
+        if (LPM < 83.81) {                                                       
           if (StartTimer == true) {
             stopwatch.Reset();
             StartTimer = false;
-            if (LPM > 85.5) {
+            if (LPM > 86.19) {
               StartTimer = true;
               }
               Serial.println("Timer Start!");
 
           }
-          if ((StartTimer == false) && (LPM < 84.5)) {                                           
+          if ((StartTimer == false) && (LPM < 83.81)) {                                           
               delay(50);
               HMI.setFont(Arial_16);
               HMI.setCursor(50, 30);
@@ -123,15 +125,15 @@ void loop() {  // put your main code here, to run repeatedly:
               TestCycles = 0;                                                         
               }
           }
-          if ((StartTimer == false) && (LPM > 86.5)) {
+          if ((StartTimer == false) && (LPM > 86.19)) {
             StartTimer = true;
             fanSpeed = startSpeed;
             analogWrite(PWM, fanSpeed);
           }
-          if ((StartTimer == false) && ((LPM >= 84.5) && (LPM <= 85.5))) {
+          if ((StartTimer == false) && ((LPM >= 83.81) && (LPM <= 86.19))) {
             HMI.fillCircle(190, 95, 5, ILI9341_GREEN);                                  
             TestCycles += 1;                                                            
-            if (TestCycles == 5) {                                                       
+            if (TestCycles == 10) {                                                       
               stopwatch.Update();                                                        
               timer = stopwatch.GetElapsed();                                            
               Serial.print(timer/1000000);                                               
@@ -139,10 +141,10 @@ void loop() {  // put your main code here, to run repeatedly:
               StartTimer = true;
               j = 0;                                                         
             }
-            while (TestCycles == 5) {
+            while (TestCycles == 10) {
                 flowSensor.readSample();
                 flowPressure = flowSensor.getDifferentialPressure();
-                LPM = ((((-0.00004 * (flowPressure * flowPressure)) + (.0329 * flowPressure) + 1.6349)) * 28.316846999);
+                LPM = ((((-0.00029 * (flowPressure * flowPressure)) + (1.1069 * flowPressure) + 39.912)));
                 HMI.fillScreen(ILI9341_WHITE);                                          
                 HMI.drawRect(5, 5, 230, 310, AtorBlue);                                 
                 HMI.drawRect(6, 6, 227, 307, AtorBlue);                                 
@@ -159,7 +161,7 @@ void loop() {  // put your main code here, to run repeatedly:
                 HMI.print(mmH2O, 2);                                                    
                 HMI.print(" mmH2O");                                                   
                 Serial.println(LPM);
-                if (LPM > 86) {
+                if (LPM > 86.2) {
                   Serial.println(startSpeed);
                   analogWrite(PWM, startSpeed);                                         
                   fanSpeed = startSpeed;
@@ -195,10 +197,10 @@ void loop() {  // put your main code here, to run repeatedly:
           } if ((StartTimer == false) && (LPM <= 80) && (fanSpeed < 204)) {                      
               fanSpeed += 1.5;                                                          
               analogWrite(PWM, fanSpeed);                                                 
-          } if ((StartTimer == false) && (LPM > 80) && (LPM <= 84.5) && (fanSpeed < 204)) {          
+          } if ((StartTimer == false) && (LPM > 80) && (LPM <= 83.81) && (fanSpeed < 204)) {          
               fanSpeed += 1;                                                            
               analogWrite(PWM, fanSpeed);                                               
-          } if ((StartTimer == false) && (LPM >= 85.5) && (fanSpeed < 204)) {                      
+          } if ((StartTimer == false) && (LPM >= 86.19) && (fanSpeed < 204)) {                      
               fanSpeed -= 1;                                                            
               analogWrite(PWM, fanSpeed);                                               
           } while (fanSpeed >= 204) {
@@ -307,7 +309,7 @@ void Diff_Sensor_Zero() {  // Differential Pressure Sensor Zeroing Method
     Serial.printf("Pressure: %lf mmH2O\n", diffPressure);
     Serial.printf("Iteration: %d\n", i);
     delay(500);
-    if (diffPressure >= -1.2 && diffPressure <= .1) {
+    if (diffPressure >= -38 && diffPressure <= .1) {
       Start_Up_Avg.add(diffPressure);
       i++;
     }
@@ -321,27 +323,34 @@ void Flow_Sensor_Start_Up() { // Stabilize Flow Sensor To 85 LPM At Start Of Pro
 
   Serial.println("Entering Flow Setup");
   bool start_up = true;
+  int num = 0;
   
   while (start_up == true) {
     flowVal = flowSensor.readSample();
     flowPressure = flowSensor.getDifferentialPressure();
-    LPM = ((((-0.00004 * (flowPressure * flowPressure)) + (.0329 * flowPressure) + 1.6349)) * 28.316846999);
+    LPM = ((((-0.00029 * (flowPressure * flowPressure)) + (1.1069 * flowPressure) + 39.912)));
+    Serial.printf("LPM: %lf\n", LPM);
     
     if (LPM <= 84.5) {
       startSpeed += 1;
       analogWrite(PWM, startSpeed);
+      Serial.printf("+1: %d\n", startSpeed);
     }
-    if (LPM >= 85.5) {
+    if (LPM >= 85.5 && startSpeed > 76) {
       startSpeed -= 1;
       analogWrite(PWM, startSpeed);
+      Serial.printf("-1: %d\n", startSpeed);
     } 
     if (LPM >= 84.5 && LPM <= 85.5) {
+      num++;
+      if (num == 3) {
       start_up = false;
       fanSpeed = startSpeed;
       Serial.println(startSpeed);
       Serial.println("Exiting Flow Setup");
-    } 
-    delay(100);
+      }
+    }
+    delay(1000);
   }
 }
 
