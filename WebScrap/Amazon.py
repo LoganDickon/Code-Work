@@ -1,4 +1,4 @@
-import csv
+import xlsxwriter
 from bs4 import BeautifulSoup
 from msedge.selenium_tools import Edge, EdgeOptions
 from selenium import webdriver
@@ -48,7 +48,7 @@ def extract_record(item):
 
 def main(search_term):
 	# Start Web Driver
-	driver = webdriver.Edge('C:/WebScraping-main/msedgedriver.exe')
+	driver = webdriver.Edge('C:/WebScraping-main/distro/msedgedriver.exe')
 	options = EdgeOptions()
 	options.use_chromium = True
 
@@ -67,15 +67,30 @@ def main(search_term):
 
 	driver.close()
 
-	# Save Data To CSV File
-	file = ('C:/WebScraping-main/Scraped Files/' + search_term + '.csv').lower()
+	row = 1
+	col = 0
+	
+	workbook = xlsxwriter.Workbook('C:/WebScraping-main/Scraped Files/' + (str(search_term) + '.xlsx').lower())
+	worksheet = workbook.add_worksheet()
+	worksheet.merge_range(0,0 , 0,8, 'Product')
+	worksheet.merge_range(0,9 , 0,10, 'Price $')
+	worksheet.merge_range(0,11 , 0,12, 'Rating')
+	worksheet.merge_range(0,13 , 0,14, 'Num of Reviews')
+	worksheet.write(0, 15, 'URL')
 
-	with open(file, 'w', newline='', encoding='utf-8') as f:
-		writer = csv.writer(f)
-		writer.writerow(['Product', 'Price $', 'Rating', 'Num of Reviews', 'URL'])
-		writer.writerows(records)
+	for rec, rec2, rec3, rec4, rec5 in records:
+		worksheet.set_row(row, 25)
+		worksheet.merge_range(row, col, row, col+8, rec)		#(start_row, start_col, end_row, end_col, item)
+		worksheet.merge_range(row, col+9, row, col+10, rec2)
+		worksheet.merge_range(row, col+11, row, col+12, rec3)
+		worksheet.merge_range(row, col+13, row, col+14, rec4)
+		worksheet.write(row, col + 15, rec5)
+		row += 1
 
-print("Welcome! This program takes any product search on Amazon.com and extracts the data to a Spreadsheet(.csv)")
-print("Tip!: What you type here will be the name of the .csv file.")
+                
+	workbook.close()
+
+print("Welcome! This program takes any product search on Amazon.com and extracts the data to an Excel spreadsheet format(.xlsx)")
+print("Note! What you type here will be the name of the file!")
 Search = input('Enter Search: ')
 main(Search)
