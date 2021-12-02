@@ -79,7 +79,7 @@ def main(search_term):
 		'fg_color': 'white'
 		})
 	
-	worksheet.merge_range(0,0 , 0,8, 'Product', workbook.add_format({'valign': 'vcenter', 'fg_color': 'white'}))
+	worksheet.merge_range(0,0 , 0,8, 'Product', merge_format)
 	worksheet.merge_range(0,9 , 0,10, '$ Price', merge_format)
 	worksheet.merge_range(0,11 , 0,12, 'Rating', merge_format)
 	worksheet.merge_range(0,13 , 0,14, 'Num of Reviews', merge_format)
@@ -87,11 +87,12 @@ def main(search_term):
 
 	for rec, rec2, rec3, rec4, rec5 in records:
 		worksheet.set_row(row, 25)
-		worksheet.merge_range(row, col, row, col+8, rec, workbook.add_format({'valign': 'vcenter', 'fg_color': 'white'}))		#(start_row, start_col, end_row, end_col, item)
+		# worksheet.merge_range(start_row, start_col, end_row, end_col, item)
+		worksheet.merge_range(row, col, row, col+8, rec, merge_format)
 		worksheet.merge_range(row, col+9, row, col+10, rec2, merge_format)
 		worksheet.merge_range(row, col+11, row, col+12, rec3, merge_format)
 		worksheet.merge_range(row, col+13, row, col+14, rec4, merge_format)
-		worksheet.write(row, col + 15, rec5)
+		worksheet.write(row, col + 15, rec5, workbook.add_format({'valign': 'vcenter'}))
 		row += 1
 
                 
