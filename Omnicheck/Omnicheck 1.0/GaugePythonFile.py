@@ -1,4 +1,5 @@
-from cv2 import VideoCapture, CAP_DSHOW
+# Import Opencv and Numpy
+from cv2 import VideoCapture, CAP_DSHOW 
 from numpy import zeros, uint8
 
 class VideoCaptureWrapper(object):
