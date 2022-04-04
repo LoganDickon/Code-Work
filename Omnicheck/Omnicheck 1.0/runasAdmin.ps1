@@ -1,0 +1,1 @@
+﻿PowerShell -NoProfile -ExecutionPolicy Bypass -Command "& {Start-Process PowerShell -ArgumentList '-WindowStyle hidden -NoProfile -ExecutionPolicy Bypass -File ""C:\Omni_Digital\Omni1\disWebPS.ps1""' -Verb RunAs}";

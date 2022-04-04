@@ -1,0 +1,1 @@
+powershell.exe -ExecutionPolicy Bypass -Command "C:\Camera_Disable_Prompt\disWebPS.ps1"
