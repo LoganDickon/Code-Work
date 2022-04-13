@@ -4,21 +4,23 @@
 // Date Modified: 3/24/2022
 
 // Licence:
-
-//    This code is for use in the FilterCheck and is owned by Atorlabs. 
-//    Permission to duplicate this program must be given by Rob Moran and/or Dave Cowgill.
+/*
+      This code is for use in the FilterCheck and is owned by Atorlabs. 
+      Permission to duplicate this program must be given by Rob Moran and/or Dave Cowgill. 
+*/
 
 // Program Description:  
-
-//    This program uses the TSI5310 FlowMeter w/ serial communication to PID control a 
-//    Brushless Fan Blower to 85 SLPM with 0 cmH2O of pressure read on the TSI5310 
-//    FlowMeter low pressure sensor. The program then goes into monitor mode until a filter 
-//    is detected via the low pressure sensor reading > -.1 cmH2O.
+/*
+      This program uses the TSI5310 FlowMeter w/ serial communication to PID control a 
+      Brushless Fan Blower to 85 SLPM with 0 cmH2O of pressure read on the TSI5310 
+      FlowMeter low pressure sensor. The program then goes into monitor mode until a filter 
+      is detected via the low pressure sensor reading > -.1 cmH2O.
+*/
 
 // Device Constants:
   #define PWM         2           // PWM Signal from pin 2 on the Teensy 3.5
-  #define RELAY       8           // Relay i/o pin on pin 8 on the Teensy 3.5
-  #define RELAY_2     7           // Relay i/o pin on pin 6 on the Teensy 3.5
+  #define RELAY       8           // Relay i/o pin on pin 8 on the Teensy 3.5 for TSI5310 Flowmeter 
+  #define RELAY_2     7           // Relay i/o pin on pin 6 on the Teensy 3.5 for BLDC Fan Blower
   #define BLUE_LED    6           // Blue LED
   #define GREEN_LED   5           // Green LED
   #define usbSerial   Serial      // Rename Serial Main to usbSerial
@@ -45,7 +47,7 @@ void setup()
     pinMode(RELAY_2, OUTPUT); // Set RELAY pin to OUTPUT mode
     pinMode(BLUE_LED, OUTPUT);  // Set LED pin to OUTPUT mode
     pinMode(GREEN_LED, OUTPUT);  // Set LED pin to OUTPUT mode
-    analogWriteFrequency(PWM, 25000);  // Set PWM Frequency to 25KHz
+    analogWriteFrequency(PWM, 25000);  // Set Teensy 3.5 PWM Frequency to 25KHz
 
   // Serial Initialization:
     usbSerial.begin(9600);  // Start serial for Teensy to PC
