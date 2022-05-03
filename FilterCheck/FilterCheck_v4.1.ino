@@ -4,23 +4,21 @@
 // Date Modified: 3/24/2022
 
 // Licence:
-/*
-      This code is for use in the FilterCheck and is owned by Atorlabs. 
-      Permission to duplicate this program must be given by Rob Moran and/or Dave Cowgill. 
-*/
+
+//    This code is for use in the FilterCheck and is owned by Atorlabs. 
+//    Permission to duplicate this program must be given by Rob Moran and/or Dave Cowgill.
 
 // Program Description:  
-/*
-      This program uses the TSI5310 FlowMeter w/ serial communication to PID control a 
-      Brushless Fan Blower to 85 SLPM with 0 cmH2O of pressure read on the TSI5310 
-      FlowMeter low pressure sensor. The program then goes into monitor mode until a filter 
-      is detected via the low pressure sensor reading > -.1 cmH2O.
-*/
+
+//    This program uses the TSI5310 FlowMeter w/ serial communication to PID control a 
+//    Brushless Fan Blower to 85 SLPM with 0 cmH2O of pressure read on the TSI5310 
+//    FlowMeter low pressure sensor. The program then goes into monitor mode until a filter 
+//    is detected via the low pressure sensor reading > -.1 cmH2O.
 
 // Device Constants:
   #define PWM         2           // PWM Signal from pin 2 on the Teensy 3.5
-  #define RELAY       8           // Relay i/o pin on pin 8 on the Teensy 3.5 for TSI5310 Flowmeter 
-  #define RELAY_2     7           // Relay i/o pin on pin 6 on the Teensy 3.5 for BLDC Fan Blower
+  #define RELAY       8           // Relay i/o pin on pin 8 on the Teensy 3.5
+  #define RELAY_2     7           // Relay i/o pin on pin 6 on the Teensy 3.5
   #define BLUE_LED    6           // Blue LED
   #define GREEN_LED   5           // Green LED
   #define usbSerial   Serial      // Rename Serial Main to usbSerial
@@ -34,7 +32,7 @@
   int j = 0;
   int k = 5;
   bool Loop = true;
-  double fan_Speed = 180;
+  double fan_Speed = 100;
   double input, output;
   double delta_PWM;
   double pressure;
@@ -47,7 +45,7 @@ void setup()
     pinMode(RELAY_2, OUTPUT); // Set RELAY pin to OUTPUT mode
     pinMode(BLUE_LED, OUTPUT);  // Set LED pin to OUTPUT mode
     pinMode(GREEN_LED, OUTPUT);  // Set LED pin to OUTPUT mode
-    analogWriteFrequency(PWM, 25000);  // Set Teensy 3.5 PWM Frequency to 25KHz
+    analogWriteFrequency(PWM, 25000);  // Set PWM Frequency to 25KHz
 
   // Serial Initialization:
     usbSerial.begin(9600);  // Start serial for Teensy to PC
@@ -56,16 +54,16 @@ void setup()
     delay(1000);
 
   // Turn On FlowMeter & Fan Blower:
-    digitalWrite(PWM, fan_Speed);  // Turn On Fan Blower
+    analogWrite(PWM, 75);  // Turn On Fan Blower
     digitalWrite(RELAY, HIGH);  // Turn Relay HIGH to allow power to the FlowMeter
-    delay(26000);
-    digitalWrite(RELAY_2, HIGH);  // Turn Relay HIGH to allow power to the Brushless Fan Blower
+    delay(32000);
+    //digitalWrite(RELAY_2, HIGH);  // Turn Relay HIGH to allow power to the Brushless Fan Blower
 
   // FlowMeter Startup ASCII Commands:
     FlowMeter.print("SUS\r\n");  // Sets flow measurement to Standard Flow
     FlowMeter.print("SG0\r\n");  // Set gas calibration to Air
     FlowMeter.print("SSR0005\r\n");  // Set sample rate to 5
-    delay(1000);
+    delay(2000);
 
   // Bring Fan Blower To 85 SLPM:
     input = Read_Sensor("Flow");  // Read the Flow from the TSI 5310 FlowMeter
@@ -156,7 +154,7 @@ void loop()
           digitalWrite(GREEN_LED, LOW);  // Turn off Green LED
           digitalWrite(BLUE_LED, HIGH);  // Turn on Blue LED
         }
-        delay(500);
+        delay(1500);
       }
 }
 
